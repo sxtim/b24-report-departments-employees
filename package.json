@@ -1,0 +1,14 @@
+{
+	"name": "b24-app-template",
+	"version": "1.0.0",
+	"private": true,
+	"scripts": {
+		"dev": "concurrently \"npm:dev:backend\" \"npm:dev:frontend\"",
+		"dev:backend": "npm run dev --prefix backend",
+		"dev:frontend": "npm run dev --prefix frontend",
+		"build:dist": "docker build --target builder -t b24-builder . && docker create --name temp-builder b24-builder && docker cp temp-builder:/app/dist ./ && docker rm temp-builder"
+	},
+	"devDependencies": {
+		"concurrently": "^8.2.2"
+	}
+}
