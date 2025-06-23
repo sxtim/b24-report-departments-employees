@@ -62,29 +62,11 @@
 						variant="outlined"
 						density="comfortable"
 						clearable
-						hint="Основной фильтр для всех режимов"
+
 						persistent-hint
 					></v-select>
 				</v-col>
-				<v-col
-					cols="12"
-					sm="6"
-					md="3"
-					v-if="selectedReportMode === 'departments'"
-				>
-					<v-select
-						label="Дополнительный фильтр по статусу"
-						:items="dealStatusItems"
-						v-model="departmentStatusFilter"
-						item-title="title"
-						item-value="value"
-						variant="outlined"
-						density="comfortable"
-						clearable
-						hint="Фильтр только для режима по отделам"
-						persistent-hint
-					></v-select>
-				</v-col>
+				
 				<v-col cols="12" sm="12" md="3" style="max-width: 360px">
 					<v-menu
 						v-model="dateMenu"
@@ -99,7 +81,7 @@
 								v-bind="props"
 								:model-value="formattedDateRange"
 								label="Период"
-								prepend-icon="mdi-calendar"
+								prepend-inner-icon="mdi-calendar"
 								readonly
 								clearable
 								@click:clear="clearDateRange"
@@ -401,5 +383,8 @@ const clearDateRange = () => {
 <style>
 .date-picker-field {
 	max-width: 360px;
+}
+.v-input__control {
+	max-height: 48px;
 }
 </style>
