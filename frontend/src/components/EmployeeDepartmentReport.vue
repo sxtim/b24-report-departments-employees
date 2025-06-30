@@ -9,7 +9,7 @@
 		<v-card-text>
 			<!-- Filters -->
 			<v-row align="center">
-				<v-col cols="12" sm="6" md="3">
+				<v-col cols="12" sm="6" md="4">
 					<v-select
 						label="Режим отчета"
 						:items="reportModes"
@@ -20,39 +20,7 @@
 						density="comfortable"
 					></v-select>
 				</v-col>
-				<v-col
-					cols="12"
-					sm="6"
-					md="3"
-					v-if="selectedReportMode === 'departments'"
-				>
-					<v-autocomplete
-						label="Отдел"
-						:items="departmentFilterItems"
-						v-model="selectedDepartmentIds"
-						item-title="title"
-						item-value="value"
-						multiple
-						clearable
-						chips
-						closable-chips
-						variant="outlined"
-						density="comfortable"
-					>
-						<template v-slot:item="{ props, item }">
-							<v-list-item v-bind="props" :title="item.raw.title">
-								<template v-slot:prepend>
-									<v-checkbox-btn
-										:model-value="
-											selectedDepartmentIds.includes(item.raw.value)
-										"
-									></v-checkbox-btn>
-								</template>
-							</v-list-item>
-						</template>
-					</v-autocomplete>
-				</v-col>
-				<v-col cols="12" sm="6" md="3">
+				<v-col cols="12" sm="6" md="4">
 					<v-select
 						label="Статус сделки"
 						:items="dealStatusItems"
@@ -62,12 +30,11 @@
 						variant="outlined"
 						density="comfortable"
 						clearable
-
 						persistent-hint
 					></v-select>
 				</v-col>
-				
-				<v-col cols="12" sm="12" md="3" style="max-width: 360px">
+
+				<v-col cols="12" sm="12" md="4">
 					<v-menu
 						v-model="dateMenu"
 						:close-on-content-click="false"
@@ -85,7 +52,6 @@
 								readonly
 								clearable
 								@click:clear="clearDateRange"
-								style="width: 360px; max-width: 360px"
 								class="date-picker-field"
 							></v-text-field>
 						</template>
@@ -114,6 +80,62 @@
 							</v-card-actions>
 						</v-card>
 					</v-menu>
+				</v-col>
+			</v-row>
+
+			<!-- Фильтр по отделу/сотруднику на отдельной строке -->
+			<v-row align="center" class="mt-2">
+				<v-col cols="12" v-if="selectedReportMode === 'departments'">
+					<v-autocomplete
+						label="Отдел"
+						:items="departmentFilterItems"
+						v-model="selectedDepartmentIds"
+						item-title="title"
+						item-value="value"
+						multiple
+						clearable
+						chips
+						closable-chips
+						variant="outlined"
+						density="comfortable"
+					>
+						<template v-slot:item="{ props, item }">
+							<v-list-item v-bind="props" :title="item.raw.title">
+								<template v-slot:prepend>
+									<v-checkbox-btn
+										:model-value="
+											selectedDepartmentIds.includes(item.raw.value)
+										"
+									></v-checkbox-btn>
+								</template>
+							</v-list-item>
+						</template>
+					</v-autocomplete>
+				</v-col>
+				<v-col cols="12" v-if="selectedReportMode === 'employees'">
+					<v-autocomplete
+						label="Сотрудник"
+						:items="employeeFilterItems"
+						v-model="selectedEmployeeIds"
+						item-title="title"
+						item-value="value"
+						multiple
+						clearable
+						chips
+						closable-chips
+						variant="outlined"
+						density="comfortable"
+					>
+						<template v-slot:item="{ props, item }">
+							<v-list-item v-bind="props" :title="item.raw.title">
+								<template v-slot:prepend>
+									<v-checkbox-btn
+										:model-value="selectedEmployeeIds.includes(item.raw.value)"
+									></v-checkbox-btn>
+								</template>
+							</v-list-item>
+						</template>
+					</v-autocomplete>
 				</v-col>
 			</v-row>
 
@@ -172,6 +194,12 @@
 							фильтрации данных. Если не выбрано ни одного отдела, будут
 							показаны все отделы. Этот фильтр доступен только в режиме "По
 							отделам".
+						</li>
+						<li v-if="selectedReportMode === 'employees'">
+							<strong>Сотрудник:</strong> Выберите одного или нескольких
+							сотрудников для фильтрации данных. Если не выбрано ни одного
+							сотрудника, будут показаны все сотрудники. Этот фильтр доступен
+							только в режиме "По сотрудникам".
 						</li>
 						<li>
 							<strong>Статус сделки:</strong> Основной фильтр по статусу сделки.
@@ -239,6 +267,7 @@ const BX24 = inject("BX24")
 // Filters
 const selectedReportMode = ref("departments") // departments или employees
 const selectedDepartmentIds = ref([])
+const selectedEmployeeIds = ref([]) // Новое состояние для хранения выбранных сотрудников
 const selectedDealStatus = ref(null)
 const departmentStatusFilter = ref(null) // Новый фильтр статуса для режима "По отделам"
 const dateRange = ref([])
@@ -248,10 +277,20 @@ const faqDialog = ref(false)
 
 // Данные для фильтров
 const allDepartments = ref([])
+const allEmployees = ref([]) // Новое состояние для хранения всех сотрудников
+
 const departmentFilterItems = computed(() => {
 	return allDepartments.value.map(dept => ({
 		title: dept.NAME,
 		value: dept.ID,
+	}))
+})
+
+// Новый computed для элементов фильтра сотрудников
+const employeeFilterItems = computed(() => {
+	return allEmployees.value.map(employee => ({
+		title: `${employee.NAME} ${employee.LAST_NAME}`,
+		value: employee.ID,
 	}))
 })
 
@@ -272,6 +311,7 @@ const dealStatusItems = [
 watch(selectedReportMode, newMode => {
 	// При переключении режима отчета сбрасываем фильтры
 	selectedDepartmentIds.value = []
+	selectedEmployeeIds.value = [] // Сбрасываем выбранных сотрудников
 	selectedDealStatus.value = null
 	departmentStatusFilter.value = null
 	dateRange.value = []
@@ -326,6 +366,16 @@ const filters = computed(() => {
 		filterObj.DEPARTMENT_ID = selectedDepartmentIds.value
 	}
 
+	// Добавляем фильтр по сотрудникам только для режима по сотрудникам
+	// Используем ASSIGNED_BY_ID для фильтрации сделок по ответственным сотрудникам
+	if (
+		selectedReportMode.value === "employees" &&
+		selectedEmployeeIds.value &&
+		selectedEmployeeIds.value.length > 0
+	) {
+		filterObj.ASSIGNED_BY_ID = selectedEmployeeIds.value
+	}
+
 	if (dateRange.value && dateRange.value.length > 0) {
 		// Для диапазона дат
 		if (dateRange.value.length > 1) {
@@ -354,7 +404,7 @@ const filters = computed(() => {
 	return filterObj
 })
 
-// Загрузка данных отделов при монтировании компонента
+// Загрузка данных отделов и сотрудников при монтировании компонента
 const loadDepartments = async () => {
 	try {
 		loading.value = true
@@ -370,9 +420,26 @@ const loadDepartments = async () => {
 	}
 }
 
+// Новая функция для загрузки сотрудников
+const loadEmployees = async () => {
+	try {
+		loading.value = true
+		const employees = await fetchEntities(BX24, "user.get", {
+			select: ["ID", "NAME", "LAST_NAME", "UF_DEPARTMENT"],
+		})
+		allEmployees.value = employees
+	} catch (err) {
+		console.error("Ошибка при загрузке сотрудников:", err)
+		error.value = "Не удалось загрузить список сотрудников"
+	} finally {
+		loading.value = false
+	}
+}
+
 // Загрузка данных при монтировании компонента
 onMounted(() => {
 	loadDepartments()
+	loadEmployees() // Добавляем загрузку сотрудников
 })
 
 const clearDateRange = () => {
@@ -385,6 +452,5 @@ const clearDateRange = () => {
 	max-width: 360px;
 }
 .v-input__control {
-	max-height: 48px;
 }
 </style>

@@ -291,22 +291,10 @@ const showDealsModal = (department, status) => {
 
 	// Фильтруем сделки по выбранному статусу
 	if (dealsByDepartment.value[department.departmentId]) {
-		// При фильтрации показываем только сделки соответствующие статусу
-		// Если есть фильтр по статусу сделки, то при клике показываем только те сделки,
-		// которые одновременно соответствуют типу сделки (IN_PROCESS, WON, LOSE) и статусу фильтра
+		// Показываем все сделки соответствующие статусу, независимо от фильтра
 		selectedDepartmentDeals.value = dealsByDepartment.value[
 			department.departmentId
-		].filter(deal => {
-			const matchesStatus = deal.stageId === status
-
-			// Если нет фильтра по статусу в фильтрах, показываем все сделки с нужным типом
-			if (!props.filters || !props.filters.STATUS_ID) {
-				return matchesStatus
-			}
-
-			// Иначе показываем только сделки, соответствующие фильтру
-			return matchesStatus && deal.matchesFilter
-		})
+		].filter(deal => deal.stageId === status)
 	} else {
 		selectedDepartmentDeals.value = []
 	}

@@ -311,22 +311,10 @@ const showDealsModal = (employee, status) => {
 
 	// Фильтруем сделки по выбранному статусу
 	if (dealsByEmployee.value[employee.employeeId]) {
-		// При фильтрации показываем только сделки соответствующие статусу
-		// Если есть фильтр по статусу сделки, то при клике показываем только те сделки,
-		// которые одновременно соответствуют типу сделки (IN_PROCESS, WON, LOSE) и статусу фильтра
+		// Показываем все сделки соответствующие статусу, независимо от фильтра
 		selectedEmployeeDeals.value = dealsByEmployee.value[
 			employee.employeeId
-		].filter(deal => {
-			const matchesStatus = deal.stageId === status
-
-			// Если нет фильтра по статусу в фильтрах, показываем все сделки с нужным типом
-			if (!props.filters || !props.filters.STATUS_ID) {
-				return matchesStatus
-			}
-
-			// Иначе показываем только сделки, соответствующие фильтру
-			return matchesStatus && deal.matchesFilter
-		})
+		].filter(deal => deal.stageId === status)
 	} else {
 		selectedEmployeeDeals.value = []
 	}
@@ -359,9 +347,6 @@ const loadData = async () => {
 			select: ["ID", "NAME", "LAST_NAME", "UF_DEPARTMENT"],
 		})
 
-		// Фильтр DEPARTMENT_ID не используется в режиме "По сотрудникам"
-		const filteredUsers = usersData
-
 		// Загрузка сделок с учетом фильтров
 		const dealFilter = { ...props.filters }
 
@@ -386,12 +371,23 @@ const loadData = async () => {
 		// Распределение сделок по сотрудникам
 		dealsByEmployee.value = {}
 
+		// Фильтруем пользователей, если есть фильтр по сотрудникам
+		let filteredUsers = [...usersData]
+		if (
+			props.filters.ASSIGNED_BY_ID &&
+			props.filters.ASSIGNED_BY_ID.length > 0
+		) {
+			filteredUsers = usersData.filter(user =>
+				props.filters.ASSIGNED_BY_ID.includes(user.ID)
+			)
+		}
+
 		deals.forEach(deal => {
 			const assignedUserId = deal.ASSIGNED_BY_ID
 			if (!assignedUserId) return
 
 			// Находим пользователя
-			const user = filteredUsers.find(u => u.ID === assignedUserId)
+			const user = usersData.find(u => u.ID === assignedUserId)
 			if (!user) return
 
 			// Определяем основной отдел пользователя (первый в списке)
